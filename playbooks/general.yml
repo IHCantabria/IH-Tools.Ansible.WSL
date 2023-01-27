@@ -1,0 +1,18 @@
+---
+- hosts: localhost
+  become: yes
+  tasks:
+    - name: Instalar paquetes generales
+      apt:
+        name:
+          - cdo
+          - curl
+          - git
+          - libgdal-dev
+          - nco
+          - python3-pip
+          - python3.10-venv
+          - screen
+          - vim
+        state: latest
+        update_cache: true

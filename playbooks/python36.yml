@@ -1,0 +1,60 @@
+---
+- name: Install Python3.6 from source
+  hosts: localhost
+  become: yes
+  vars:
+    python_version: 3.6.15
+  tasks:
+  - name: Check that the /usr/local/bin/python3.6 exists
+    stat:
+      path: /usr/local/bin/python3.6
+    tags: python
+    register: python_result
+  - name: Update apt-cache
+    apt: update_cache=yes
+    tags: packages, python
+    when: python_result.stat.exists == False
+  - name: Install packages needed for installing Python
+    apt: pkg={{ item }}
+    with_items:
+      - gcc-10
+      - wget
+      - xz-utils
+      - build-essential
+      - libsqlite3-dev
+      - libreadline-dev
+      - libssl-dev
+      - openssl
+    tags: packages, python
+    when: python_result.stat.exists == False
+  - name: Extract python {{ python_version }} into /tmp
+    unarchive:
+      src: https://www.python.org/ftp/python/{{ python_version }}/Python-{{ python_version }}.tar.xz
+      dest: /tmp/
+      remote_src: yes
+    tags: packages, python
+
+  - name: Configure python {{ python_version }}
+    shell: ./configure chdir=/tmp/Python-{{ python_version }} --enable-optimizations --with-lto --with-pydebug
+    tags: packages, python
+    when: python_result.stat.exists == False
+
+  - name: Make
+    shell: make -j 8 chdir=/tmp/Python-{{ python_version }}
+    tags: packages, python
+    when: python_result.stat.exists == False
+
+  - name: Install Python {{ python_version }}
+    shell: make -j 8 altinstall chdir=/tmp/Python-{{ python_version }}
+    become: yes
+    become_user: root
+    tags: packages, python
+    when: python_result.stat.exists == False
+
+  - name: Remove tmp files used for Python {{ python_version }} installation
+    file: path={{ item }} state=absent
+    with_items:
+      - /tmp/Python.tar.xz
+      - /tmp/{{ python_version }}
+    tags: packages, python
+    when: python_result.stat.exists == False

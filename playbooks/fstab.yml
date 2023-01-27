@@ -1,0 +1,28 @@
+---
+- hosts: localhost
+  become: yes 
+  tasks:
+    - name: get the username running the deploy
+      become: false
+      local_action: command whoami
+      register: username_on_the_host
+    - name: Añadir carpeta 99
+      ansible.builtin.file:
+        path: /mnt/p
+        state: directory
+        mode: '0755'
+        owner: "{{ username_on_the_host.stdout }}"
+        group: "{{ username_on_the_host.stdout }}"
+    - name: Añadir info 99 a fstab
+      mount:
+        src: "p:"
+        path: /mnt/p/
+        fstype: drvfs
+        opts: file_mode=0644,dir_mode=0755
+        state: mounted
+# The mount module supports the following states:
+#   Mounted – When the state is set to mounted, the device will be mounted and configured in the fstab. Ansible will automatically create the mount point if it does not exist.
+#   Unmounted – if set to unmounted, the specified device will be mounted with no changes to the fstab.
+#   Present – If set to present, the device is configured in fstab, with no need for a mount point.
+#   Absent – if absent, Ansible will remove the device’s mount entry from fstab and remove its mount point.
+#   Remounted – used when you want to remount a device. Typically used to refresh the mount point.

@@ -1,0 +1,27 @@
+---
+# Usado info de https://stackoverflow.com/a/26399105
+- hosts: localhost
+  become: yes
+  tasks:
+    - name: Instalar Zsh
+      apt:
+        name:
+          - zsh
+        state: latest
+        update_cache: true
+
+    - name: Get the username running the deploy
+      become: false
+      local_action: command whoami
+      register: username_on_the_host
+    - debug: var=username_on_the_host
+    - name: Cambiar el shell del usuario a zsh
+      user:
+        name: "{{ username_on_the_host.stdout }}"
+        shell: /bin/zsh
+
+    - name: Install oh my zsh
+      git:
+        repo: https://github.com/ohmyzsh/ohmyzsh.git
+        dest: ~/.oh-my-zsh
+        depth: 1
